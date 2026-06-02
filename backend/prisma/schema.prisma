@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  WORKER
+  MANAGER
+}
+
+enum PunchType {
+  ENTRY
+  BREAK_START
+  BREAK_END
+  EXIT
+}
+
+enum RequestType {
+  VACATION
+  PERSONAL_DAY
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(WORKER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clockIns       ClockIn[]
+  leaveRequests  LeaveRequest[] @relation("EmployeeRequests")
+  approvals      LeaveRequest[] @relation("ManagerApprovals")
+  incompatible1  Incompatibility[] @relation("Employee1")
+  incompatible2  Incompatibility[] @relation("Employee2")
+}
+
+model ClockIn {
+  id        String    @id @default(cuid())
+  userId    String
+  type      PunchType
+  timestamp DateTime  @default(now())
+  latitude  Float?
+  longitude Float?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, timestamp])
+}
+
+model LeaveRequest {
+  id           String        @id @default(cuid())
+  userId       String
+  type         RequestType
+  startDate    DateTime      @db.Date
+  endDate      DateTime      @db.Date
+  status       RequestStatus @default(PENDING)
+  managerId    String?
+  notes        String?
+  hasConflict  Boolean       @default(false)
+  conflictWith String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  employee User  @relation("EmployeeRequests", fields: [userId], references: [id])
+  manager  User? @relation("ManagerApprovals", fields: [managerId], references: [id])
+
+  @@index([userId, startDate, endDate])
+  @@index([status])
+}
+
+model Incompatibility {
+  id          String   @id @default(cuid())
+  employee1Id String
+  employee2Id String
+  createdAt   DateTime @default(now())
+
+  employee1 User @relation("Employee1", fields: [employee1Id], references: [id])
+  employee2 User @relation("Employee2", fields: [employee2Id], references: [id])
+
+  @@unique([employee1Id, employee2Id])
+}
