@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, X, AlertTriangle } from "lucide-react";
+import { Plus, X, AlertTriangle, CalendarDays, Clock } from "lucide-react";
 import { leaveApi, LeaveRequest, RequestType } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { KronosIcon } from "../../components/KronosLogo";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -13,8 +15,37 @@ const STATUS_STYLES: Record<string, string> = {
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pendiente", APPROVED: "Aprobado", REJECTED: "Rechazado",
 };
+const TYPE_LABELS: Record<string, string> = {
+  VACATION: "Vacaciones", PERSONAL_DAY: "Asuntos Propios",
+};
+
+function WorkerBottomNav({ active }: { active: "fichar" | "solicitudes" }) {
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-slate-800 bg-slate-950/95 backdrop-blur-md">
+      <Link
+        to="/worker/fichar"
+        className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold transition ${
+          active === "fichar" ? "text-blue-400" : "text-slate-500 hover:text-slate-300"
+        }`}
+      >
+        <Clock size={20} />
+        Fichar
+      </Link>
+      <Link
+        to="/worker/solicitudes"
+        className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold transition ${
+          active === "solicitudes" ? "text-blue-400" : "text-slate-500 hover:text-slate-300"
+        }`}
+      >
+        <CalendarDays size={20} />
+        Solicitudes
+      </Link>
+    </nav>
+  );
+}
 
 export default function MyRequests() {
+  const { user, logout } = useAuth();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -25,6 +56,12 @@ export default function MyRequests() {
   useEffect(() => {
     leaveApi.myRequests().then((res) => setRequests(res.data.requests)).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!submitMsg) return;
+    const t = setTimeout(() => setSubmitMsg(null), 5000);
+    return () => clearTimeout(t);
+  }, [submitMsg]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,9 +74,7 @@ export default function MyRequests() {
       const conflict = res.data.conflict;
       setSubmitMsg({
         ok: true,
-        msg: conflict
-          ? `Solicitud enviada. Aviso: ${conflict.message}`
-          : "Solicitud enviada correctamente",
+        msg: conflict ? `Solicitud enviada. Aviso: ${conflict.message}` : "Solicitud enviada correctamente",
       });
       setForm({ type: "VACATION", startDate: "", endDate: "", notes: "" });
       setShowForm(false);
@@ -51,31 +86,39 @@ export default function MyRequests() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <header className="flex items-center gap-4 border-b border-slate-800 px-5 py-4">
-        <Link to="/worker/fichar" className="text-slate-400 hover:text-white transition">
-          <ArrowLeft size={20} />
-        </Link>
-        <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-blue-500">KRONOS+</p>
-          <h1 className="text-lg font-bold text-white">Mis Solicitudes</h1>
+    <div className="flex min-h-screen flex-col bg-slate-950 pb-16">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-5 py-3 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-white/90 p-1.5">
+            <KronosIcon size={32} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Trabajador</p>
+            <h1 className="text-sm font-bold leading-tight text-white">{user?.name}</h1>
+          </div>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="ml-auto flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition active:scale-95"
-        >
-          <Plus size={16} />
-          Nueva
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow transition hover:bg-blue-700 active:scale-95"
+          >
+            <Plus size={14} />
+            Nueva
+          </button>
+          <button onClick={logout} className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition">
+            Salir
+          </button>
+        </div>
       </header>
 
-      <div className="px-5 pb-10 pt-6 space-y-5">
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 pb-6 pt-5">
         {/* Formulario nueva solicitud */}
         {showForm && (
-          <form onSubmit={handleSubmit} className="card space-y-4">
+          <form onSubmit={handleSubmit} className="card space-y-4 border-blue-500/20">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-white">Nueva solicitud</h2>
-              <button type="button" onClick={() => setShowForm(false)} className="text-slate-500 hover:text-slate-300">
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition">
                 <X size={18} />
               </button>
             </div>
@@ -85,7 +128,7 @@ export default function MyRequests() {
               <select
                 value={form.type}
                 onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as RequestType }))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-white outline-none ring-blue-500 focus:ring-2"
+                className="input-field"
               >
                 <option value="VACATION">Vacaciones</option>
                 <option value="PERSONAL_DAY">Asuntos Propios</option>
@@ -99,7 +142,7 @@ export default function MyRequests() {
                   type="date"
                   value={form.startDate}
                   onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-white outline-none ring-blue-500 focus:ring-2"
+                  className="input-field py-2.5"
                   required
                 />
               </div>
@@ -109,7 +152,7 @@ export default function MyRequests() {
                   type="date"
                   value={form.endDate}
                   onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-white outline-none ring-blue-500 focus:ring-2"
+                  className="input-field py-2.5"
                   required
                 />
               </div>
@@ -121,25 +164,30 @@ export default function MyRequests() {
                 value={form.notes}
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-white outline-none ring-blue-500 focus:ring-2 resize-none"
+                className="input-field resize-none"
                 placeholder="Motivo o comentario..."
               />
             </div>
 
             <button type="submit" disabled={submitting} className="btn-primary w-full">
-              {submitting ? "Enviando..." : "Enviar solicitud"}
+              {submitting ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Enviando...
+                </span>
+              ) : "Enviar solicitud"}
             </button>
           </form>
         )}
 
-        {/* Feedback de envío */}
+        {/* Feedback */}
         {submitMsg && (
           <div className={`rounded-xl border px-4 py-3 text-sm font-medium ${
-            submitMsg.ok ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                        : "bg-red-500/10 border-red-500/30 text-red-400"
+            submitMsg.ok ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        : "border-red-500/30 bg-red-500/10 text-red-400"
           }`}>
             {submitMsg.ok && submitMsg.msg.includes("Aviso") && (
-              <AlertTriangle size={14} className="inline mr-1.5 text-amber-400" />
+              <AlertTriangle size={14} className="mr-1.5 inline text-amber-400" />
             )}
             {submitMsg.msg}
           </div>
@@ -147,38 +195,40 @@ export default function MyRequests() {
 
         {/* Lista */}
         {loading ? (
-          <div className="text-center text-slate-500 py-10">Cargando...</div>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <div key={i} className="skeleton h-24 w-full" />)}
+          </div>
         ) : requests.length === 0 ? (
-          <div className="text-center py-16 text-slate-500">
-            <p>No tienes solicitudes todavía.</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="mt-3 text-blue-400 hover:text-blue-300 text-sm underline underline-offset-2"
-            >
-              Crea tu primera solicitud
-            </button>
+          <div className="flex flex-col items-center py-16 text-center text-slate-500">
+            <CalendarDays size={48} className="mb-4 text-slate-700" />
+            <p className="font-medium text-slate-400">Sin solicitudes todavía</p>
+            <p className="mt-1 text-sm">Usa el botón "Nueva" para crear tu primera solicitud</p>
           </div>
         ) : (
           <div className="space-y-3">
             {requests.map((r) => (
               <div key={r.id} className="card">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-white">
-                      {r.type === "VACATION" ? "Vacaciones" : "Asuntos Propios"}
-                    </p>
-                    <p className="text-sm text-slate-400 mt-0.5">
-                      {format(new Date(r.startDate), "d MMM yyyy", { locale: es })}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                        r.status === "APPROVED" ? "bg-emerald-400" :
+                        r.status === "REJECTED" ? "bg-red-400" : "bg-amber-400"
+                      }`} />
+                      <p className="font-semibold text-white">{TYPE_LABELS[r.type]}</p>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-400">
+                      {format(new Date(r.startDate), "d MMM", { locale: es })}
                       {" — "}
                       {format(new Date(r.endDate), "d MMM yyyy", { locale: es })}
                     </p>
-                    {r.notes && <p className="text-xs text-slate-500 mt-1">{r.notes}</p>}
+                    {r.notes && <p className="mt-1 text-xs italic text-slate-500">"{r.notes}"</p>}
                   </div>
-                  <span className={`badge border shrink-0 ${STATUS_STYLES[r.status]}`}>
+                  <span className={`badge shrink-0 border ${STATUS_STYLES[r.status]}`}>
                     {STATUS_LABELS[r.status]}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-slate-600">
+                <p className="mt-2.5 text-xs text-slate-600">
                   Solicitado el {format(new Date(r.createdAt), "d/MM/yyyy")}
                 </p>
               </div>
@@ -186,6 +236,8 @@ export default function MyRequests() {
           </div>
         )}
       </div>
+
+      <WorkerBottomNav active="solicitudes" />
     </div>
   );
 }
