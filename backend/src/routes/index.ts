@@ -38,6 +38,11 @@ router.delete("/incompatibilities/:id", requireAuth, requireManager, Leave.manag
 router.get("/dashboard/status", requireAuth, requireManager, Dashboard.realTimeStatus);
 router.get("/dashboard/workers", requireAuth, requireManager, Dashboard.getWorkers);
 
+// ── Gestión de usuarios (gerente) ─────────────────────────────────────
+router.get("/users", requireAuth, requireManager, Dashboard.getUsers);
+router.post("/users", requireAuth, requireManager, Dashboard.createUser);
+router.delete("/users/:id", requireAuth, requireManager, Dashboard.deleteUser);
+
 // ── Exportación de informes (gerente) ─────────────────────────────────
 router.get("/reports/export", requireAuth, requireManager, Report.exportReport);
 

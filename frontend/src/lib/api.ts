@@ -61,6 +61,10 @@ export interface LeaveRequest {
   createdAt: string;
 }
 
+export interface UserDetail extends User {
+  createdAt: string;
+}
+
 export interface WorkerStatus {
   worker: User;
   currentStatus: "IDLE" | "WORKING" | "ON_BREAK" | "FINISHED";
@@ -97,6 +101,13 @@ export const leaveApi = {
 export const dashboardApi = {
   status: () => api.get<{ status: WorkerStatus[] }>("/dashboard/status"),
   workers: () => api.get<{ workers: User[] }>("/dashboard/workers"),
+};
+
+export const usersApi = {
+  list: () => api.get<{ users: UserDetail[] }>("/users"),
+  create: (data: { name: string; email: string; password: string; role: Role }) =>
+    api.post<{ user: UserDetail }>("/users", data),
+  remove: (id: string) => api.delete(`/users/${id}`),
 };
 
 export const reportApi = {

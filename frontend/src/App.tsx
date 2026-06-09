@@ -5,6 +5,7 @@ import MobilePunchIn from "./pages/worker/MobilePunchIn";
 import MyRequests from "./pages/worker/MyRequests";
 import GerenteDashboard from "./pages/manager/GerenteDashboard";
 import Approvals from "./pages/manager/Approvals";
+import Empleados from "./pages/manager/Empleados";
 
 function ProtectedRoute({ children, role }: { children: JSX.Element; role?: "WORKER" | "MANAGER" }) {
   const { user, loading } = useAuth();
@@ -46,6 +47,10 @@ export default function App() {
           <Route
             path="/manager/aprobaciones"
             element={<ProtectedRoute role="MANAGER"><Approvals /></ProtectedRoute>}
+          />
+          <Route
+            path="/manager/empleados"
+            element={<ProtectedRoute role="MANAGER"><Empleados /></ProtectedRoute>}
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />

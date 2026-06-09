@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, X, LayoutDashboard, ClipboardCheck, AlertTriangle, CheckCircle } from "lucide-react";
+import { Check, X, LayoutDashboard, ClipboardCheck, AlertTriangle, CheckCircle, UserCog } from "lucide-react";
 import { KronosIcon } from "../../components/KronosLogo";
 import { useAuth } from "../../context/AuthContext";
 import { leaveApi, LeaveRequest, RequestStatus } from "../../lib/api";
@@ -164,6 +164,10 @@ export default function Approvals() {
                 {pendingCount}
               </span>
             )}
+          </Link>
+          <Link to="/manager/empleados" className="nav-tab pb-3 rounded-none hover:border-b-2 hover:border-slate-600">
+            <UserCog size={15} />
+            Empleados
           </Link>
         </div>
       </header>

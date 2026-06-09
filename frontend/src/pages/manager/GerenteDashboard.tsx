@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, CheckCircle, Coffee, Clock, LogOut as LogOutIcon, Download, RefreshCw, LayoutDashboard, ClipboardCheck } from "lucide-react";
+import { Users, CheckCircle, Coffee, Clock, LogOut as LogOutIcon, Download, RefreshCw, LayoutDashboard, ClipboardCheck, UserCog } from "lucide-react";
 import { dashboardApi, reportApi, WorkerStatus } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { KronosIcon } from "../../components/KronosLogo";
@@ -174,6 +174,10 @@ export default function GerenteDashboard() {
           <Link to="/manager/aprobaciones" className="nav-tab pb-3 rounded-none hover:border-b-2 hover:border-slate-600">
             <ClipboardCheck size={15} />
             Aprobaciones
+          </Link>
+          <Link to="/manager/empleados" className="nav-tab pb-3 rounded-none hover:border-b-2 hover:border-slate-600">
+            <UserCog size={15} />
+            Empleados
           </Link>
         </div>
       </header>
